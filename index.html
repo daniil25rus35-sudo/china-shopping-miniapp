@@ -7,9 +7,19 @@
 <section class="notice" id="photo-search" aria-labelledby="photo-title" style="border-color:#df414a;background:#242124">
 <div class="brand">ПОИСК ЛЮБЫХ ТОВАРОВ</div>
 <h2 id="photo-title" style="font-size:24px;margin:8px 0">📷 Найти товар по фото</h2>
-<p>Есть фотография или скриншот товара? Пришлите его в наш Telegram-бот для подбора в Китае.</p>
-<div class="actions"><a class="primary" href="https://t.me/ChinaShoppingVLBotai" id="photo-request">Отправить фото в бот →</a></div>
-<p class="source-note">В чате прикрепите фото через скрепку и укажите размер, модель или пожелания. Сейчас это заявка на подбор, а не автоматический поиск по картинке.</p>
+<p>Пришлите фото или скриншот товара — подберём варианты из Китая.</p>
+<fieldset style="border:0;padding:0;margin:16px 0"><legend style="font-weight:700;margin-bottom:8px">Где искать?</legend>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+<label style="display:flex;gap:8px;align-items:center;border:1px solid #5c5140;padding:10px;border-radius:9px"><input type="checkbox" name="market" value="1688" checked style="accent-color:#efc77a;width:18px;height:18px"> 1688</label>
+<label style="display:flex;gap:8px;align-items:center;border:1px solid #5c5140;padding:10px;border-radius:9px"><input type="checkbox" name="market" value="Taobao" checked style="accent-color:#efc77a;width:18px;height:18px"> Taobao</label>
+<label style="display:flex;gap:8px;align-items:center;border:1px solid #5c5140;padding:10px;border-radius:9px"><input type="checkbox" name="market" value="Pinduoduo" checked style="accent-color:#efc77a;width:18px;height:18px"> Pinduoduo</label>
+<label style="display:flex;gap:8px;align-items:center;border:1px solid #5c5140;padding:10px;border-radius:9px"><input type="checkbox" name="market" value="Tmall" checked style="accent-color:#efc77a;width:18px;height:18px"> Tmall</label>
+<label style="display:flex;gap:8px;align-items:center;border:1px solid #5c5140;padding:10px;border-radius:9px"><input type="checkbox" name="market" value="Poizon" checked style="accent-color:#efc77a;width:18px;height:18px"> Poizon</label>
+</div></fieldset>
+<label for="photo-details" style="font-weight:700">Пожелания (необязательно)</label>
+<textarea id="photo-details" rows="3" maxlength="500" placeholder="Размер, цвет, бюджет, количество…" style="display:block;width:100%;margin:8px 0 14px;padding:12px;font:inherit;background:#111214;color:#f6f5f3;border:1px solid #5c5140;border-radius:9px"></textarea>
+<div class="actions"><a class="primary" href="https://t.me/ChinaShoppingVLBotai" id="photo-request">Отправить заявку и фото в бот →</a></div>
+<p class="source-note" id="photo-hint" aria-live="polite">В Telegram прикрепите фото через скрепку и отправьте сообщение. Пока это заявка на подбор, не автоматический поиск по картинке.</p>
 </section>
 <div class="notice"><strong>Подборка для поиска, не подтверждённый ассортимент.</strong> Цены источников на 25.11.2026 — ориентиры в юанях, не окончательные цены заказа. Наличие, конкретный вариант, условия перевозки и полную стоимость нужно уточнять до оплаты. Фотографии доступны в исходных карточках; мы не копируем чужие снимки без разрешения.</div>
 <nav class="controls" aria-label="Фильтр каталога"><button type="button" data-filter="all" aria-pressed="true">Все 12</button><button type="button" data-filter="aroma" aria-pressed="false">Ароматы</button><button type="button" data-filter="light" aria-pressed="false">Подсветка</button><button type="button" data-filter="charge" aria-pressed="false">Зарядка</button><button type="button" data-filter="care" aria-pressed="false">Уход и комфорт</button></nav>
@@ -40,4 +50,17 @@ for(const [type,title,desc,price,aggregator,source] of items){
  grid.append(a);
 }
 for(const b of document.querySelectorAll('[data-filter]'))b.addEventListener('click',()=>{for(const z of document.querySelectorAll('[data-filter]'))z.setAttribute('aria-pressed',String(z===b));for(const card of grid.children)card.hidden=b.dataset.filter!=='all'&&card.dataset.type!==b.dataset.filter});
+
+const photoLink=document.getElementById('photo-request');
+const marketInputs=[...document.querySelectorAll('input[name="market"]')];
+const details=document.getElementById('photo-details');
+const photoHint=document.getElementById('photo-hint');
+function preparePhotoRequest(){
+ const markets=marketInputs.filter(input=>input.checked).map(input=>input.value);
+ const message='Здравствуйте! Хочу найти товар по фото.\nПлощадки: '+(markets.length?markets.join(', '):'Любая подходящая')+'\nПожелания: '+(details.value.trim()||'Уточню позже')+'\nПрошу рассчитать стоимость с доставкой во Владивосток.';
+ photoLink.href='https://t.me/ChinaShoppingVLBotai?text='+encodeURIComponent(message);
+}
+for(const input of marketInputs)input.addEventListener('change',preparePhotoRequest);
+details.addEventListener('input',preparePhotoRequest);
+preparePhotoRequest();
 </script></body></html>
