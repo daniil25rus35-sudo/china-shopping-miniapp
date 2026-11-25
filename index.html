@@ -22,11 +22,29 @@
 <p class="source-note" id="photo-hint" aria-live="polite">В Telegram прикрепите фото через скрепку и отправьте сообщение. Пока это заявка на подбор, не автоматический поиск по картинке.</p>
 </section>
 <div class="notice"><strong>Подборка для поиска, не подтверждённый ассортимент.</strong> Цены источников на 25.11.2026 — ориентиры в юанях, не окончательные цены заказа. Наличие, конкретный вариант, условия перевозки и полную стоимость нужно уточнять до оплаты. Фотографии доступны в исходных карточках; мы не копируем чужие снимки без разрешения.</div>
+<section class="notice" aria-labelledby="currency-title" id="currency-calculator">
+<h2 id="currency-title" style="font-size:22px;margin:0 0 8px">Калькулятор покупки</h2>
+<p>Рабочий курс: <strong id="exchange-rate">13,80 ₽ за 1 ¥</strong></p>
+<p class="source-note" id="rate-validity">Курс установлен 25.11.2026 на 7 дней. Доставка рассчитывается отдельно.</p>
+<label for="yuan-amount">Стоимость товара в юанях</label>
+<input id="yuan-amount" type="number" inputmode="decimal" min="0" max="10000000" step="0.01" placeholder="Например, 100" style="display:block;width:100%;margin:8px 0;padding:12px;border-radius:9px;border:1px solid #5c5140;background:#111214;color:#fff;font:inherit">
+<output id="rub-total" for="yuan-amount" aria-live="polite" style="display:block;font-size:26px;color:#efc77a;font-weight:800">—</output>
+<p class="source-note">Предварительный расчёт товара, без доставки. Итог согласуем перед оплатой.</p>
+</section>
 <nav class="controls" aria-label="Фильтр каталога"><button type="button" data-filter="all" aria-pressed="true">Все 12</button><button type="button" data-filter="aroma" aria-pressed="false">Ароматы</button><button type="button" data-filter="light" aria-pressed="false">Подсветка</button><button type="button" data-filter="charge" aria-pressed="false">Зарядка</button><button type="button" data-filter="care" aria-pressed="false">Уход и комфорт</button></nav>
 <section class="grid" id="grid" aria-label="Товарные карточки"></section>
 <footer>Условия услуги: выкуп без комиссии, курс на момент выкупа, доставка отдельно по индивидуальному расчёту. При оформлении согласуем наличие, полную стоимость и условия 100% предоплаты. Эта подборка не обещает наличие, скидки или сроки. <a href="https://china.vladdoors.ru/">Главная страница China Shopping</a>.</footer></main>
 <script>
 'use strict';
+const rate={rubPerYuan:13.80,validUntil:'2026-12-02T00:00:00+10:00'};
+const rubles=new Intl.NumberFormat('ru-RU',{style:'currency',currency:'RUB',maximumFractionDigits:2});
+const rateCurrent=Date.now()<Date.parse(rate.validUntil);
+const amount=document.getElementById('yuan-amount'), total=document.getElementById('rub-total');
+document.getElementById('exchange-rate').textContent=rate.rubPerYuan.toFixed(2).replace('.',',')+' ₽ за 1 ¥';
+if(!rateCurrent)document.getElementById('rate-validity').textContent='Срок действия курса истёк. Уточните новый курс перед заказом.';
+function calculate(){const val=amount.valueAsNumber;total.textContent=rateCurrent&&Number.isFinite(val)&&val>=0&&val<=10000000?rubles.format(val*rate.rubPerYuan):'—';}
+amount.addEventListener('input',calculate);
+calculate();
 const items=[
  ['aroma','NetEase «Облако»','Твёрдый ароматический бальзам в декоративной ёмкости. Уточняем аромат и состав.',null,'35,9','https://www.taouq.com/id-GKrvwk5rs8tYkVOn3MghYPksQtJ-aAZjjVSjOxwXGJ3fz/'],
  ['light','RGB-подсветка зоны ног','USB-питание; заявлена реакция на музыку. Динамический режим — только на стоянке.',null,'6,5','https://www.taouq.com/id-5nBWaygmHxtyw5paO3mh77YUMtV-PNzeejCKVywNABmIY/'],
@@ -46,7 +64,7 @@ const grid=document.getElementById('grid');
 for(const [type,title,desc,price,aggregator,source] of items){
  const a=document.createElement('article');a.className='card';a.dataset.type=type;
  const c=cats[type];const lead=price?'Цена в каталоге Xiaomi':'Цена требует сверки у продавца';
- a.innerHTML=`<div class="category"><span class="symbol" aria-hidden="true">${c[1]}</span><small>Фото у источника</small></div><div class="content"><span class="label">${c[0]} · подбор под заказ</span><h2 class="title">${title}</h2><p class="description">${desc}</p><div class="price">${price?price+' ¥':'По запросу'}</div><p class="source-note">${lead}${aggregator?' (ориентир агрегатора '+aggregator+' ¥, не цена заказа)':''}${price?' · при наличии, возможна акционная цена':''}.</p><div class="actions"><a href="${source}" target="_blank" rel="noopener noreferrer">Карточка и фото у источника ↗</a><a class="primary" href="https://t.me/ChinaShoppingVLBotai" target="_blank" rel="noopener noreferrer">Уточнить наличие и стоимость</a></div></div>`;
+ a.innerHTML=`<div class="category"><span class="symbol" aria-hidden="true">${c[1]}</span><small>Фото у источника</small></div><div class="content"><span class="label">${c[0]} · подбор под заказ</span><h2 class="title">${title}</h2><p class="description">${desc}</p><div class="price">${price?price+' ¥':'По запросу'}</div>${price&&rateCurrent?'<p class="source-note">Ориентир: '+rubles.format(Number(price)*rate.rubPerYuan)+' без доставки</p>':''}<p class="source-note">${lead}${aggregator?' (ориентир агрегатора '+aggregator+' ¥, не цена заказа)':''}${price?' · при наличии, возможна акционная цена':''}.</p><div class="actions"><a href="${source}" target="_blank" rel="noopener noreferrer">Карточка и фото у источника ↗</a><a class="primary" href="https://t.me/ChinaShoppingVLBotai" target="_blank" rel="noopener noreferrer">Уточнить наличие и стоимость</a></div></div>`;
  grid.append(a);
 }
 for(const b of document.querySelectorAll('[data-filter]'))b.addEventListener('click',()=>{for(const z of document.querySelectorAll('[data-filter]'))z.setAttribute('aria-pressed',String(z===b));for(const card of grid.children)card.hidden=b.dataset.filter!=='all'&&card.dataset.type!==b.dataset.filter});
