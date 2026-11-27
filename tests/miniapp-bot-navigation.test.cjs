@@ -17,7 +17,7 @@ function setup(tg) {
   }
   const document = { getElementById:node, querySelectorAll:()=>[], querySelector:()=>true, addEventListener:(type,fn)=>{if(type==='click')listeners.push(fn);} };
   const context = {document,window:{Telegram:tg?{WebApp:tg}:undefined,addEventListener(){},scrollTo(){}},location:{hash:'#search/poizon'},localStorage:{getItem:()=>null,setItem(){}},navigator:{},Intl,Date,URL};
-  vm.runInNewContext(script+'\n;globalThis.api={renderSearch,marketList,items,formatUrl};',context);
+  vm.runInNewContext(script+'\n;globalThis.api={renderSearch,marketList,items,formatUrl,calculate,validateCatalog,cart,addCart,cartText,renderCart,parseRoute,renderRoute};',context);
   function click(href, options={}){
     const event={button:0,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},target:{closest:s=>s==='a[href]'?{href}:null},...options};
     for(const fn of listeners)fn(event);
@@ -41,6 +41,27 @@ test('photo-search opens the bot instruction without a competing close call',()=
   app.api.renderSearch('jd');assert.equal(app.node('open-bot').href,BOT+'?start=photo_search');
   assert.equal(app.click(BOT),true);assert.deepEqual(calls,[['open',BOT]]);
   assert.match(html,/<a class="primary hero-action" href="https:\/\/t\.me\/ChinaShoppingVLBotai\?start=photo_search">/);
+});
+test('fixed rate has no deadline and works for future dates',()=>{
+  const app=setup();app.node('yuan-amount').valueAsNumber=100;app.api.calculate();
+  assert.match(app.node('rub-total').textContent,/1[\s\u00a0\u202f]380/);
+  assert.doesNotMatch(app.node('rate-validity').textContent,/истёк|02\.12|на 7 дней/);
+});
+test('catalog validates source URLs, prices, stable IDs and duplicate IDs',()=>{
+  const data=JSON.parse(fs.readFileSync('catalog-data.json','utf8'));const app=setup();
+  assert.equal(app.api.validateCatalog(data),true);
+  const bad=structuredClone(data);bad.items[0][5]='javascript:alert(1)';assert.equal(app.api.validateCatalog(bad),false);
+  const dupe=structuredClone(data);dupe.items[1][6]=dupe.items[0][6];assert.equal(app.api.validateCatalog(dupe),false);
+  const prices=structuredClone(data);prices.items[0][3]='не число';assert.equal(app.api.validateCatalog(prices),false);
+});
+test('cart creates a draft, adds quantity and generates the existing bot link without sending',()=>{
+  const {calls,tg}=native();const app=setup(tg);app.api.addCart(5);app.api.addCart(5);
+  assert.equal(app.api.cart.get('auto-006').qty,2);
+  assert.match(app.api.cartText(),/Xiaomi 100W × 2/);
+  assert.match(app.node('cart-request').href,/ChinaShoppingVLBotai\?text=/);
+  assert.equal(calls.length,0);
+  assert.match(app.node('cart-summary').textContent,/единиц: 2/);
+  assert.equal(app.api.parseRoute('#nonexistent').path,'home');
 });
 test('normal web browser and unknown Telegram platform preserve ordinary links',()=>{
   assert.equal(setup().click(BOT),false);
@@ -77,4 +98,5 @@ test('official script and explicit return are present; existing IDs are unique',
     }
   }
 });
+
 
