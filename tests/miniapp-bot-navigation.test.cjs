@@ -29,16 +29,18 @@ function native(overrides={}){
   const calls=[];return {calls,tg:{platform:'android',initData:'',openTelegramLink:url=>calls.push(['open',url]),close:()=>calls.push(['close']),...overrides}};
 }
 
-test('photo-search chooses the bot and the selected caption without sending',()=>{
+test('photo-search opens the bot instruction without a competing close call',()=>{
   const {calls,tg}=native(); const app=setup(tg);
   for(const [id,cmd] of [['poizon','поиск poizon'],['taobao','поиск taobao'],['1688','поиск 1688']]){
     app.api.renderSearch(id);
-    assert.equal(new URL(app.node('open-bot').href).searchParams.get('text'),cmd);
+    assert.equal(app.node('search-command').textContent,cmd);
+    assert.equal(new URL(app.node('open-bot').href).searchParams.get('start'),'photo_search');
     assert.equal(app.click(app.node('open-bot').href),true);
-    assert.deepEqual(calls.splice(0),[['open',BOT+'?text='+encodeURIComponent(cmd)],['close']]);
+    assert.deepEqual(calls.splice(0),[['open',BOT+'?start=photo_search']]);
   }
-  app.api.renderSearch('jd');assert.equal(app.node('open-bot').href,BOT);
-  assert.equal(app.click(BOT),true);assert.deepEqual(calls,[['open',BOT],['close']]);
+  app.api.renderSearch('jd');assert.equal(app.node('open-bot').href,BOT+'?start=photo_search');
+  assert.equal(app.click(BOT),true);assert.deepEqual(calls,[['open',BOT]]);
+  assert.match(html,/<a class="primary hero-action" href="https:\/\/t\.me\/ChinaShoppingVLBotai\?start=photo_search">/);
 });
 test('normal web browser and unknown Telegram platform preserve ordinary links',()=>{
   assert.equal(setup().click(BOT),false);
@@ -48,18 +50,18 @@ test('normal web browser and unknown Telegram platform preserve ordinary links',
 test('native bot draft and global return work, unrelated links unchanged',()=>{
   const {calls,tg}=native();const app=setup(tg);
   const draft=app.api.formatUrl('Заявка: товар & цвет');
-  assert.equal(app.click(draft),true);assert.deepEqual(calls.splice(0),[['open',draft],['close']]);
+  assert.equal(app.click(draft),true);assert.deepEqual(calls.splice(0),[['open',draft]]);
   assert.equal(app.click('https://t.me/ShoppinngChina'),false);
   assert.equal(app.click('https://example.org/ChinaShoppingVLBotai'),false);
   assert.equal(app.click(BOT,{ctrlKey:true}),false);
   assert.equal(calls.length,0);
 });
-test('older client can close the app, failed draft bridge preserves fallback',()=>{
+test('older client and failed native bridge preserve actual target rather than closing to arbitrary chat',()=>{
   const a=native({openTelegramLink:undefined});const app=setup(a.tg);
-  assert.equal(app.click(BOT),true);assert.deepEqual(a.calls,[['close']]);
+  assert.equal(app.click(BOT),false);assert.deepEqual(a.calls,[]);
   assert.equal(app.click(BOT+'?text=test'),false);
   const b=native({openTelegramLink:()=>{throw Error('unsupported');}});
-  assert.equal(setup(b.tg).click(BOT),true);assert.deepEqual(b.calls,[['close']]);
+  assert.equal(setup(b.tg).click(BOT),false);assert.deepEqual(b.calls,[]);
   assert.equal(setup(b.tg).click(BOT+'?text=test'),false);
 });
 test('official script and explicit return are present; existing IDs are unique',()=>{
@@ -75,3 +77,4 @@ test('official script and explicit return are present; existing IDs are unique',
     }
   }
 });
+
