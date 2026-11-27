@@ -1,6 +1,6 @@
 // Network first: never let an older catalog or Mini App override a live response.
-const CACHE='china-shopping-shell-v1';
-const staticFiles=['./','./index.html','./premium-v2.css','./navigation-v3.css','./icon.svg','./manifest.webmanifest'];
+const CACHE='china-shopping-shell-v2';
+const staticFiles=['./','./index.html','./app.js','./premium-v2.css','./navigation-v3.css','./icon.svg','./manifest.webmanifest','./img/auto-001.webp','./img/auto-002.webp','./img/auto-003.webp','./img/auto-004.webp','./img/auto-005.webp','./img/auto-006.webp','./img/auto-007.webp','./img/auto-008.webp','./img/auto-009.webp','./img/auto-010.webp','./img/auto-011.webp','./img/auto-012.webp'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(staticFiles)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('china-shopping-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{const req=event.request,url=new URL(req.url);if(req.method!=='GET'||url.origin!==self.location.origin||url.search)return;const base=new URL(self.registration.scope);if(!staticFiles.some(p=>new URL(p,base).href===url.href))return;event.respondWith(fetch(req).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(req,copy)));}return response;}).catch(async()=>await caches.match(req)||(req.mode==='navigate'?await caches.match(new URL('./',base).href):null)||Response.error()));});

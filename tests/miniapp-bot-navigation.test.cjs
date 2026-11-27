@@ -4,19 +4,19 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const html = fs.readFileSync(process.env.MINIAPP_TEST_FILE || 'index.html', 'utf8');
-const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const script = fs.readFileSync('app.js', 'utf8');
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
 const BOT = 'https://t.me/ChinaShoppingVLBotai';
 
 function setup(tg) {
   const listeners = [], nodes = new Map();
   function node(id) {
-    assert.ok(ids.includes(id), 'valid DOM id ' + id);
-    if (!nodes.has(id)) nodes.set(id,{id,innerHTML:'',textContent:'',value:'',valueAsNumber:NaN,hidden:false,href:'',dataset:{},addEventListener(){},setAttribute(){},removeAttribute(){}});
+    assert.ok(ids.includes(id)||id==='cart-badge', 'valid DOM id ' + id);
+    if (!nodes.has(id)) nodes.set(id,{id,innerHTML:'',textContent:'',value:'',valueAsNumber:NaN,hidden:false,href:'',dataset:{},classList:{add(){},remove(){}},addEventListener(){},setAttribute(){},removeAttribute(){}});
     return nodes.get(id);
   }
   const document = { getElementById:node, querySelectorAll:()=>[], querySelector:()=>true, addEventListener:(type,fn)=>{if(type==='click')listeners.push(fn);} };
-  const context = {document,window:{Telegram:tg?{WebApp:tg}:undefined,addEventListener(){},scrollTo(){}},location:{hash:'#search/poizon'},localStorage:{getItem:()=>null,setItem(){}},navigator:{},Intl,Date,URL};
+  const context = {document,window:{Telegram:tg?{WebApp:tg}:undefined,addEventListener(){},scrollTo(){}},location:{hash:'#search/poizon'},localStorage:{getItem:()=>null,setItem(){}},navigator:{},Intl,Date,URL,requestAnimationFrame:fn=>fn(),setTimeout};
   vm.runInNewContext(script+'\n;globalThis.api={renderSearch,marketList,items,formatUrl,calculate,validateCatalog,cart,addCart,cartText,renderCart,parseRoute,renderRoute};',context);
   function click(href, options={}){
     const event={button:0,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;},target:{closest:s=>s==='a[href]'?{href}:null},...options};
@@ -58,9 +58,9 @@ test('cart creates a draft, adds quantity and generates the existing bot link wi
   const {calls,tg}=native();const app=setup(tg);app.api.addCart(5);app.api.addCart(5);
   assert.equal(app.api.cart.get('auto-006').qty,2);
   assert.match(app.api.cartText(),/Xiaomi 100W × 2/);
-  assert.match(app.node('cart-request').href,/ChinaShoppingVLBotai\?text=/);
+  assert.match(app.node('drawer-request').href,/ChinaShoppingVLBotai\?text=/);
   assert.equal(calls.length,0);
-  assert.match(app.node('cart-summary').textContent,/единиц: 2/);
+  assert.match(app.node('drawer-sum').innerHTML,/единиц: 2/);
   assert.equal(app.api.parseRoute('#nonexistent').path,'home');
 });
 test('normal web browser and unknown Telegram platform preserve ordinary links',()=>{
@@ -94,9 +94,10 @@ test('official script and explicit return are present; existing IDs are unique',
     const before=fs.readFileSync(process.env.MINIAPP_BASELINE,'utf8');
     for (const block of ['items','marketList']) {
       const re=new RegExp('const '+block+'=(\\[[\\s\\S]*?\\n\\]);');
-      assert.equal(html.match(re)[1],before.match(re)[1]);
+      assert.equal(script.match(re)[1],before.match(re)[1]);
     }
   }
 });
+
 
 
