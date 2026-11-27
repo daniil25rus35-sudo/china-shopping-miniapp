@@ -8,7 +8,7 @@
 - `index.html` — разметка всех экранов (hash-роутинг `#catalog`, `#orders`, `#guides/poizon` и т.д.), стили v3
 - `app.js` — вся логика (каталог, корзина-шторка, избранное, гайды, словарь, калькулятор, хаптика)
 - `catalog-data.json` — подборка товаров: `[тип, название, описание, цена CNY|null, ориентир|null, ссылка, id]`
-- `img/auto-*.webp` — фото товаров (600×552, WebP)
+- `img/{id}.webp` — фото товаров (600×552, WebP): `auto-*` — автотовары, `furn-*` — мебель, `home-*` — товары для дома, `lei-*` — отдых и досуг
 - `premium-v2.css`, `navigation-v3.css` — базовые стили и арт
 - `sw.js` — service worker (network-first, кэш оболочки v2)
 - `manifest.webmanifest`, `icon.svg` — PWA
